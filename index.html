@@ -6,7 +6,7 @@
     </head>
     <body>
         <canvas width="320" height="240" id="canvas"></canvas>
-        
+
         <script type="text/javascript">
             // (function () {
                 var ctx = canvas.getContext('2d');
@@ -14,11 +14,13 @@
                 var canvasX = canvas.offsetLeft;
                 var canvasY = canvas.offsetTop;
                 var fontSize = parseInt(ctx.font.match(/\d+/), 10);
-                var lineHeight = fontSize * 1.6;
-                var text = 'Canvas text clip outline';
+                var lineHeight = fontSize * 1;
+                var text = 'Canvas text clip outline aaaaaaaaaaaaaaaaaand another additional very looooooooooooong or not so much long text';
                 var maxStringWidth = 30;
-                var padding = 0;
+                var padding = 8;
                 var textArr = text.split(' ');
+                var verticalHeight = 0;
+                var verticalHalfHeight;
 
                 for (var i = 0, current, next, str; i < textArr.length; i++) {
                     next = textArr[i + 1];
@@ -35,73 +37,82 @@
                     }
                 }
 
-                var verticalHeight = 0;
-                var verticalHalfHeight;
-
                 (function () {
                     for (var i = 0, imax = textArr.length; i < imax; i++) {
                         verticalHeight += lineHeight;
                     }
                 })();
 
-                verticalHalfHeight = 0; // verticalHeight / 2;
+                verticalHalfHeight = verticalHeight / 2;
 
                 draw(canvas.width / 2, canvas.height / 2);
 
-                canvas.onmousedown = function (e) {
+                document.onmousedown = function (e) {
                     dragging = true;
-                    canvas.onmousemove(e);
+                    document.onmousemove(e);
                 };
 
-                canvas.onmousemove = function (e) {
+                document.onmousemove = function (e) {
                     if (dragging) {
                         draw(e.pageX - canvasX, e.pageY - canvasY);
                     }
                 };
 
-                canvas.onmouseup = function () {
+                document.onmouseup = function () {
                     dragging = false;
                 };
 
-                function getOutineRects (lineX, lineY) {
-                    var textWidth, w, h, x, y;
+                function getOutlineRects (lineX, lineY) {
+                    var textWidth;
                     var rects = [];
+                    var currentRect, prevRect;
+                    var overPositionDiff;
 
                     for (var i = 0, imax = textArr.length; i < imax; i++) {
                         textWidth = ctx.measureText(textArr[i]).width;
-                        w = textWidth + padding * 2;
-                        h = lineHeight + padding * 2;
-                        x = lineX - w / 2;
-                        y = lineY + lineHeight * i - verticalHalfHeight;
 
-                        rects.push({
-                            w: w,
-                            h: h,
-                            x: x,
-                            y: y
-                        });
+                        prevRect = currentRect;
+                        currentRect = {};
+
+                        currentRect.w = textWidth + padding * 2;
+                        currentRect.h = lineHeight + padding * 2;
+                        currentRect.x = lineX - currentRect.w / 2;
+                        currentRect.y = lineY + lineHeight * i - padding - verticalHalfHeight;
+
+                        overPositionDiff = prevRect ? prevRect.y + prevRect.h - currentRect.y : 0;
+
+                        if (overPositionDiff > 0) {
+                            if (prevRect.w > currentRect.w) {
+                                currentRect.y += overPositionDiff;
+                                currentRect.h -= overPositionDiff;
+                            } else {
+                                prevRect.h -= overPositionDiff;
+                            }
+                        }
+
+                        rects.push(currentRect);
                     }
 
                     return rects;
                 }
 
                 function draw (lineX, lineY) {
-                    var outlineRects = getOutineRects(lineX, lineY);
+                    var outlineRects = getOutlineRects(lineX / 2, lineY / 2);
 
                     drawBackgound();
 
-                    drawOutline(outlineRects);
+                    // drawOutline(outlineRects);
 
                     ctx.save();
                     
                     // drawClipSectors(outlineRects);
-                    // clipOutline(outlineRects);
+                    clipOutline(outlineRects);
 
                     darawLine(lineX, lineY);
                     
                     ctx.restore();
 
-                    drawText(lineX, lineY);
+                    drawText(lineX / 2, lineY / 2);
                 }
 
                 function drawText (lineX, lineY) {
@@ -137,23 +148,27 @@
                 function drawBackgound () {
                     ctx.beginPath();
                     ctx.fillStyle = '#ccc';
-                    ctx.beginPath();
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#bfbcbc';
+                    ctx.moveTo(canvas.width / 2, 0);
+                    ctx.lineTo(canvas.width / 2, canvas.height);
+                    ctx.moveTo(0, canvas.height / 2);
+                    ctx.lineTo(canvas.width, canvas.height / 2);
+                    ctx.stroke();
                 }
 
                 function drawClipSectors (outlineRects) {
                     var colors = [
                         'blue',
                         'green',
-                        'orange',
                         'purple',
-                        'aqua',
-                        'blue',
-                        'green',
                         'orange',
-                        'purple',
                         'aqua',
+                        'indianred',
                     ];
+                    var colorIndex = 0;
                     var firstRect = outlineRects[0];
                     var lastRect = outlineRects[outlineRects.length - 1];
                     var rect;
@@ -164,13 +179,19 @@
                     ctx.fillRect(0, 0, canvas.width, firstRect.y);
 
                     for (var i = 0, imax = outlineRects.length; i < imax; i++) {
+                        if (!colors[colorIndex]) {
+                            colorIndex = 0;
+                        }
+
                         rect = outlineRects[i];
                         
-                        ctx.fillStyle = colors[i*2];
+                        ctx.fillStyle = colors[colorIndex];
                         ctx.fillRect(0, rect.y, rect.x, rect.h);
 
-                        ctx.fillStyle = colors[i*2 + 1];
+                        ctx.fillStyle = colors[colorIndex + 1];
                         ctx.fillRect(rect.x + rect.w, rect.y, canvas.width - rect.x - rect.w, rect.h);
+
+                        colorIndex += 2;
                     }
 
                     ctx.fillStyle = 'yellow';
