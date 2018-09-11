@@ -8,86 +8,193 @@
         <canvas width="320" height="240" id="canvas"></canvas>
         
         <script type="text/javascript">
-            var ctx = canvas.getContext('2d');
-            var dragging = false;
-            var canvasX = canvas.offsetLeft;
-            var canvasY = canvas.offsetTop;
-
-            draw(canvas.width / 2, canvas.height / 2);
-
-            canvas.onmousedown = function (e) {
-                dragging = true;
-                canvas.onmousemove(e);
-            };
-
-            canvas.onmousemove = function (e) {
-                if (dragging) {
-                    draw(e.pageX - canvasX, e.pageY - canvasY);
-                }
-            };
-
-            canvas.onmouseup = function () {
-                dragging = false;
-            };
-
-            function draw (lineX, lineY) {
-                var text = 'Canvas text clip outline';
-                var measureText = ctx.measureText(text);
+            // (function () {
+                var ctx = canvas.getContext('2d');
+                var dragging = false;
+                var canvasX = canvas.offsetLeft;
+                var canvasY = canvas.offsetTop;
                 var fontSize = parseInt(ctx.font.match(/\d+/), 10);
-                var padding = 8;
-                var w = measureText.width + padding * 2;
-                var h = fontSize + padding * 2;
-                var x = lineX / 2 - w / 2;
-                var y = lineY / 2 - h / 2;
+                var text = 'Canvas text clip outline';
+                var maxStringWidth = 30;
+                var padding = 0;
+                var textArr = text.split(' ');
 
-                // Background
-                ctx.beginPath();
-                ctx.fillStyle = '#ccc';
-                ctx.beginPath();
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                for (var i = 0, current, next, str; i < textArr.length; i++) {
+                    next = textArr[i + 1];
 
-                // Text outine
-                /* ctx.beginPath();
-                ctx.fillStyle = 'pink';
-                ctx.fillRect(x, y, w, h); */
+                    if (next) {
+                        current = textArr[i];
+                        str = current + ' ' + next;
 
-                // Clip
-                ctx.save();
-                ctx.beginPath();
-                /* ctx.fillStyle = 'red';
-                ctx.fillRect(0, 0, canvas.width, y);
+                        if (ctx.measureText(str).width <= maxStringWidth) {
+                            textArr[i] = str;
+                            textArr.splice(i + 1, 1);
+                            i--;
+                        }
+                    }
+                }
 
-                ctx.fillStyle = 'blue';
-                ctx.fillRect(0, y, x, h);
+                var verticalHeight = 0;
+                var verticalHalfHeight;
 
-                ctx.fillStyle = 'green';
-                ctx.fillRect(x + w, y, canvas.width - x - w, h);
+                (function () {
+                    for (var i = 0, imax = textArr.length; i < imax; i++) {
+                        verticalHeight += fontSize;
+                    }
+                })();
 
-                ctx.fillStyle = 'yellow';
-                ctx.fillRect(0, y + h, canvas.width, canvas.height - y + h); */
-                ctx.rect(0, 0, canvas.width, y);
-                ctx.rect(0, y, x, h);
-                ctx.rect(x + w, y, canvas.width - x - w, h);
-                ctx.rect(0, y + h, canvas.width, canvas.height - y + h);
-                ctx.clip();
+                verticalHalfHeight = verticalHeight / 2;
 
-                // Line
-                ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.strokeStyle = '#000';
-                ctx.lineTo(lineX, lineY);
-                ctx.stroke();
-                ctx.restore();
-                
-                // Text
-                ctx.beginPath();
-                ctx.fillStyle = '#000';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(text, lineX / 2, lineY / 2);
+                draw(canvas.width / 2, canvas.height / 2);
 
-                console.log(ctx);
-            }
+                canvas.onmousedown = function (e) {
+                    dragging = true;
+                    canvas.onmousemove(e);
+                };
+
+                canvas.onmousemove = function (e) {
+                    if (dragging) {
+                        draw(e.pageX - canvasX, e.pageY - canvasY);
+                    }
+                };
+
+                canvas.onmouseup = function () {
+                    dragging = false;
+                };
+
+                function getOutineRects (lineX, lineY) {
+                    var textWidth, w, h, x, y;
+                    var rects = [];
+
+                    for (var i = 0, imax = textArr.length; i < imax; i++) {
+                        textWidth = ctx.measureText(textArr[i]).width;
+                        w = textWidth + padding * 2;
+                        h = fontSize + padding * 2;
+                        x = lineX - w / 2;
+                        y = lineY + fontSize * i - verticalHalfHeight;
+
+                        rects.push({
+                            w: w,
+                            h: h,
+                            x: x,
+                            y: y
+                        });
+                    }
+
+                    return rects;
+                }
+
+                function draw (lineX, lineY) {
+                    var outlineRects = getOutineRects(lineX, lineY);
+
+                    drawBackgound();
+
+                    drawOutline(outlineRects);
+
+                    ctx.save();
+                    
+                    // drawClipSectors(outlineRects);
+                    // clipOutline(outlineRects);
+
+                    darawLine(lineX, lineY);
+                    
+                    ctx.restore();
+
+                    drawText(lineX, lineY);
+                }
+
+                function drawText (lineX, lineY) {
+                    ctx.beginPath();
+                    ctx.fillStyle = '#000';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'top';
+
+                    for (var i = 0, imax = textArr.length; i < imax; i++) {
+                        ctx.fillText(textArr[i], lineX, lineY + fontSize * i - verticalHalfHeight);
+                    }
+                }
+
+                function darawLine (lineX, lineY) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.strokeStyle = '#000';
+                    ctx.lineTo(lineX, lineY);
+                    ctx.stroke();
+                }
+
+                function drawOutline (outlineRects) {
+                    ctx.beginPath();
+                    ctx.fillStyle = 'pink';
+
+                    for (var i = 0, imax = outlineRects.length; i < imax; i++) {
+                        ctx.fillRect(outlineRects[i].x, outlineRects[i].y, outlineRects[i].w, outlineRects[i].h);
+                    }
+                }
+
+                function drawBackgound () {
+                    ctx.beginPath();
+                    ctx.fillStyle = '#ccc';
+                    ctx.beginPath();
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+
+                function drawClipSectors (outlineRects) {
+                    var colors = [
+                        'blue',
+                        'green',
+                        'orange',
+                        'purple',
+                        'aqua',
+                        'blue',
+                        'green',
+                        'orange',
+                        'purple',
+                        'aqua',
+                    ];
+                    var firstRect = outlineRects[0];
+                    var lastRect = outlineRects[outlineRects.length - 1];
+                    var rect;
+
+                    ctx.beginPath();
+
+                    ctx.fillStyle = 'red';
+                    ctx.fillRect(0, 0, canvas.width, firstRect.y);
+
+                    for (var i = 0, imax = outlineRects.length; i < imax; i++) {
+                        rect = outlineRects[i];
+                        
+                        ctx.fillStyle = colors[i*2];
+                        ctx.fillRect(0, rect.y, rect.x, rect.h);
+
+                        ctx.fillStyle = colors[i*2 + 1];
+                        ctx.fillRect(rect.x + rect.w, rect.y, canvas.width - rect.x - rect.w, rect.h);
+                    }
+
+                    ctx.fillStyle = 'yellow';
+                    ctx.fillRect(0, lastRect.y + lastRect.h, canvas.width, canvas.height - lastRect.y + lastRect.h);
+                }
+
+                function clipOutline (outlineRects) {
+                    var firstRect = outlineRects[0];
+                    var lastRect = outlineRects[outlineRects.length - 1];
+                    var rect;
+
+                    ctx.beginPath();
+                    
+                    ctx.rect(0, 0, canvas.width, firstRect.y);
+
+                    for (var i = 0, imax = outlineRects.length; i < imax; i++) {
+                        rect = outlineRects[i];
+
+                        ctx.rect(0, rect.y, rect.x, rect.h);
+                        ctx.rect(rect.x + rect.w, rect.y, canvas.width - rect.x - rect.w, rect.h);
+                    }
+
+                    ctx.rect(0, lastRect.y + lastRect.h, canvas.width, canvas.height - lastRect.y + lastRect.h);
+
+                    ctx.clip();
+                }
+            // })();
         </script>
     </body>
 </html>
