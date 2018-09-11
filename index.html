@@ -14,6 +14,7 @@
                 var canvasX = canvas.offsetLeft;
                 var canvasY = canvas.offsetTop;
                 var fontSize = parseInt(ctx.font.match(/\d+/), 10);
+                var lineHeight = fontSize * 1.6;
                 var text = 'Canvas text clip outline';
                 var maxStringWidth = 30;
                 var padding = 0;
@@ -39,11 +40,11 @@
 
                 (function () {
                     for (var i = 0, imax = textArr.length; i < imax; i++) {
-                        verticalHeight += fontSize;
+                        verticalHeight += lineHeight;
                     }
                 })();
 
-                verticalHalfHeight = verticalHeight / 2;
+                verticalHalfHeight = 0; // verticalHeight / 2;
 
                 draw(canvas.width / 2, canvas.height / 2);
 
@@ -69,9 +70,9 @@
                     for (var i = 0, imax = textArr.length; i < imax; i++) {
                         textWidth = ctx.measureText(textArr[i]).width;
                         w = textWidth + padding * 2;
-                        h = fontSize + padding * 2;
+                        h = lineHeight + padding * 2;
                         x = lineX - w / 2;
-                        y = lineY + fontSize * i - verticalHalfHeight;
+                        y = lineY + lineHeight * i - verticalHalfHeight;
 
                         rects.push({
                             w: w,
@@ -104,13 +105,15 @@
                 }
 
                 function drawText (lineX, lineY) {
+                    var lineHeightOffset = (lineHeight - fontSize) / 2;
+
                     ctx.beginPath();
                     ctx.fillStyle = '#000';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'top';
 
                     for (var i = 0, imax = textArr.length; i < imax; i++) {
-                        ctx.fillText(textArr[i], lineX, lineY + fontSize * i - verticalHalfHeight);
+                        ctx.fillText(textArr[i], lineX, lineY + lineHeight * i - verticalHalfHeight + lineHeightOffset);
                     }
                 }
 
