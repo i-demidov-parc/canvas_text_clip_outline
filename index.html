@@ -5,7 +5,7 @@
         <title>Canvas text clip outline</title>
     </head>
     <body>
-        <canvas width="500" height="375" id="canvas"></canvas>
+        <canvas width="800" height="500" id="canvas"></canvas>
 
         <script type="text/javascript">
             // (function () {
@@ -53,6 +53,8 @@
                         document.onmousemove(e);
                     } else if (e.which === 2) {
                         reset();
+
+                        return false;
                     }
                 };
 
@@ -70,11 +72,37 @@
                     }
                 };
 
-                function reset () {
-                    draw(canvas.width, canvas.height);
+                function draw (px, py) {
+                    var x1 = canvas.width / 2;
+                    var y1 = canvas.height / 2;
+                    var x2 = px === undefined ? canvas.width / 2 : px;
+                    var y2 = py === undefined ? canvas.height / 2 : py;
+                    var xc = x1 + (x2 - x1) / 2;
+                    var yc = y1 + (y2 - y1) / 2;
+
+                    var outlineRects = getOutlineRects(xc, yc);
+
+                    drawBackgound();
+
+                    // drawOutline(outlineRects);
+
+                    ctx.save();
+
+                    // drawClipSectors(outlineRects);
+                    clipOutline(outlineRects);
+
+                    darawLine(x1, y1, x2, y2);
+
+                    ctx.restore();
+
+                    drawText(xc, yc);
                 }
 
-                function getOutlineRects (lineX, lineY) {
+                function reset () {
+                    draw();
+                }
+
+                function getOutlineRects (cx, cy) {
                     var textWidth;
                     var rects = [];
                     var currentRect, prevRect;
@@ -87,8 +115,8 @@
 
                         currentRect.w = textWidth + padding * 2;
                         currentRect.h = lineHeight + padding * 2;
-                        currentRect.x = lineX - currentRect.w / 2;
-                        currentRect.y = lineY + lineHeight * i - padding - verticalHalfHeight;
+                        currentRect.x = cx - currentRect.w / 2;
+                        currentRect.y = cy + lineHeight * i - padding - verticalHalfHeight;
 
                         function checkOverPosition () {
                             var overPositionDiff = prevRect ? prevRect.y + prevRect.h - currentRect.y : 0;
@@ -121,26 +149,7 @@
                     return rects;
                 }
 
-                function draw (lineX, lineY) {
-                    var outlineRects = getOutlineRects(lineX / 2, lineY / 2);
-
-                    drawBackgound();
-
-                    // drawOutline(outlineRects);
-
-                    ctx.save();
-
-                    // drawClipSectors(outlineRects);
-                    clipOutline(outlineRects);
-
-                    darawLine(lineX, lineY);
-
-                    ctx.restore();
-
-                    drawText(lineX / 2, lineY / 2);
-                }
-
-                function drawText (lineX, lineY) {
+                function drawText (cx, cy) {
                     var lineHeightOffset = (lineHeight - fontSize) / 2;
 
                     ctx.beginPath();
@@ -149,15 +158,15 @@
                     ctx.textBaseline = 'top';
 
                     for (var i = 0, imax = textArr.length; i < imax; i++) {
-                        ctx.fillText(textArr[i], lineX, lineY + lineHeight * i - verticalHalfHeight + lineHeightOffset);
+                        ctx.fillText(textArr[i], cx, cy + lineHeight * i - verticalHalfHeight + lineHeightOffset);
                     }
                 }
 
-                function darawLine (lineX, lineY) {
+                function darawLine (x1, y1, x2, y2) {
                     ctx.beginPath();
-                    ctx.moveTo(0, 0);
+                    ctx.moveTo(x1, y1);
                     ctx.strokeStyle = '#000';
-                    ctx.lineTo(lineX, lineY);
+                    ctx.lineTo(x2, y2);
                     ctx.stroke();
                 }
 
@@ -181,6 +190,17 @@
                     ctx.lineTo(canvas.width / 2, canvas.height);
                     ctx.moveTo(0, canvas.height / 2);
                     ctx.lineTo(canvas.width, canvas.height / 2);
+
+                    ctx.moveTo(canvas.width / 4, 0);
+                    ctx.lineTo(canvas.width / 4, canvas.height);
+                    ctx.moveTo(0, canvas.height / 4);
+                    ctx.lineTo(canvas.width, canvas.height / 4);
+
+                    ctx.moveTo((canvas.width / 4) * 3, 0);
+                    ctx.lineTo((canvas.width / 4) * 3, canvas.height);
+                    ctx.moveTo(0, (canvas.height / 4) * 3);
+                    ctx.lineTo(canvas.width, (canvas.height / 4) * 3);
+
                     ctx.stroke();
                 }
 
