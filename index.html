@@ -5,7 +5,7 @@
         <title>Canvas text clip outline</title>
     </head>
     <body>
-        <canvas width="320" height="240" id="canvas"></canvas>
+        <canvas width="500" height="375" id="canvas"></canvas>
 
         <script type="text/javascript">
             // (function () {
@@ -78,7 +78,6 @@
                     var textWidth;
                     var rects = [];
                     var currentRect, prevRect;
-                    var overPositionDiff;
 
                     for (var i = 0, imax = textArr.length; i < imax; i++) {
                         textWidth = ctx.measureText(textArr[i]).width;
@@ -91,18 +90,32 @@
                         currentRect.x = lineX - currentRect.w / 2;
                         currentRect.y = lineY + lineHeight * i - padding - verticalHalfHeight;
 
-                        overPositionDiff = prevRect ? prevRect.y + prevRect.h - currentRect.y : 0;
+                        function checkOverPosition () {
+                            var overPositionDiff = prevRect ? prevRect.y + prevRect.h - currentRect.y : 0;
 
-                        if (overPositionDiff > 0) {
-                            if (prevRect.w > currentRect.w) {
-                                currentRect.y += overPositionDiff;
-                                currentRect.h -= overPositionDiff;
-                            } else {
-                                prevRect.h -= overPositionDiff;
+                            if (overPositionDiff > 0) {
+                                if (prevRect.w > currentRect.w) {
+                                    currentRect.y += overPositionDiff;
+                                    currentRect.h -= overPositionDiff;
+                                } else {
+                                    prevRect.h -= overPositionDiff;
+
+                                    if (prevRect.h <= 0) {
+                                        rects.pop();
+
+                                        prevRect = rects[rects.length - 1];
+
+                                        checkOverPosition();
+                                    }
+                                }
                             }
                         }
 
-                        rects.push(currentRect);
+                        checkOverPosition();
+
+                        if (currentRect.h > 0) {
+                            rects.push(currentRect);
+                        }
                     }
 
                     return rects;
@@ -113,11 +126,11 @@
 
                     drawBackgound();
 
-                    drawOutline(outlineRects);
+                    // drawOutline(outlineRects);
 
                     ctx.save();
 
-                    drawClipSectors(outlineRects);
+                    // drawClipSectors(outlineRects);
                     clipOutline(outlineRects);
 
                     darawLine(lineX, lineY);
@@ -163,7 +176,7 @@
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                     ctx.beginPath();
-                    ctx.strokeStyle = '#bfbcbc';
+                    ctx.strokeStyle = '#9e9e9e';
                     ctx.moveTo(canvas.width / 2, 0);
                     ctx.lineTo(canvas.width / 2, canvas.height);
                     ctx.moveTo(0, canvas.height / 2);
