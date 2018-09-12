@@ -45,22 +45,34 @@
 
                 verticalHalfHeight = verticalHeight / 2;
 
-                draw(canvas.width / 2, canvas.height / 2);
+                reset();
 
                 document.onmousedown = function (e) {
-                    dragging = true;
-                    document.onmousemove(e);
-                };
-
-                document.onmousemove = function (e) {
-                    if (dragging) {
-                        draw(e.pageX - canvasX, e.pageY - canvasY);
+                    if (e.which === 1) {
+                        dragging = true;
+                        document.onmousemove(e);
+                    } else if (e.which === 2) {
+                        reset();
                     }
                 };
 
-                document.onmouseup = function () {
-                    dragging = false;
+                document.onmousemove = function (e) {
+                    if (e.which === 1) {
+                        if (dragging) {
+                            draw(e.pageX - canvasX, e.pageY - canvasY);
+                        }
+                    }
                 };
+
+                document.onmouseup = function (e) {
+                    if (e.which === 1) {
+                        dragging = false;
+                    }
+                };
+
+                function reset () {
+                    draw(canvas.width, canvas.height);
+                }
 
                 function getOutlineRects (lineX, lineY) {
                     var textWidth;
@@ -101,15 +113,15 @@
 
                     drawBackgound();
 
-                    // drawOutline(outlineRects);
+                    drawOutline(outlineRects);
 
                     ctx.save();
-                    
-                    // drawClipSectors(outlineRects);
+
+                    drawClipSectors(outlineRects);
                     clipOutline(outlineRects);
 
                     darawLine(lineX, lineY);
-                    
+
                     ctx.restore();
 
                     drawText(lineX / 2, lineY / 2);
@@ -184,7 +196,7 @@
                         }
 
                         rect = outlineRects[i];
-                        
+
                         ctx.fillStyle = colors[colorIndex];
                         ctx.fillRect(0, rect.y, rect.x, rect.h);
 
@@ -204,7 +216,7 @@
                     var rect;
 
                     ctx.beginPath();
-                    
+
                     ctx.rect(0, 0, canvas.width, firstRect.y);
 
                     for (var i = 0, imax = outlineRects.length; i < imax; i++) {
