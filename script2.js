@@ -174,8 +174,85 @@ window.onload = function () {
             x2: rect.x + rect.w,
             y2: rect.y + rect.h,
         };
+        var leftIntersection = getLinesIntersection({
+            x: points.x1,
+            y: points.y1
+        }, {
+            x: points.x2,
+            y: points.y2
+        }, {
+            x: rectPoints.x1,
+            y: rectPoints.y1
+        }, {
+            x: rectPoints.x1,
+            y: rectPoints.y2
+        });
+        var rightIntersection = getLinesIntersection({
+            x: points.x1,
+            y: points.y1
+        }, {
+            x: points.x2,
+            y: points.y2
+        }, {
+            x: rectPoints.x2,
+            y: rectPoints.y1
+        }, {
+            x: rectPoints.x2,
+            y: rectPoints.y2
+        });
+        var upIntersection = getLinesIntersection({
+            x: points.x1,
+            y: points.y1
+        }, {
+            x: points.x2,
+            y: points.y2
+        }, {
+            x: rectPoints.x1,
+            y: rectPoints.y1
+        }, {
+            x: rectPoints.x2,
+            y: rectPoints.y1
+        });
+        var downIntersection = getLinesIntersection({
+            x: points.x1,
+            y: points.y1
+        }, {
+            x: points.x2,
+            y: points.y2
+        }, {
+            x: rectPoints.x1,
+            y: rectPoints.y2
+        }, {
+            x: rectPoints.x2,
+            y: rectPoints.y2
+        });
 
-        console.log(points, rect, rectPoints);
+        ctx.beginPath();
+        ctx.fillStyle = 'red';
+        leftIntersection && ctx.arc(leftIntersection.x, leftIntersection.y, 2, 0, Math.PI * 2);
+        rightIntersection && ctx.arc(rightIntersection.x, rightIntersection.y, 2, 0, Math.PI * 2);
+        upIntersection && ctx.arc(upIntersection.x, upIntersection.y, 2, 0, Math.PI * 2);
+        downIntersection && ctx.arc(downIntersection.x, downIntersection.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function getLinesIntersection (ps1, pe1, ps2, pe2) {
+        var a1 = pe1.y - ps1.y;
+        var b1 = ps1.x - pe1.x;
+        var a2 = pe2.y - ps2.y;
+        var b2 = ps2.x - pe2.x;
+        var delta = a1 * b2 - a2 * b1;
+
+        if (delta === 0) return null;
+
+        var c2 = a2 * ps2.x + b2 * ps2.y;
+        var c1 = a1 * ps1.x + b1 * ps1.y;
+        var invdelta = 1 / delta;
+
+        return {
+            x: (b2 * c1 - b1 * c2) * invdelta,
+            y: (a1 * c2 - a2 * c1) * invdelta
+        };
     }
 
     function drawOutline (outlineRects) {
