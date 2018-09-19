@@ -227,13 +227,20 @@ window.onload = function () {
             y: rectPoints.y2
         });
 
-        ctx.beginPath();
         ctx.fillStyle = 'red';
-        leftIntersection && ctx.arc(leftIntersection.x, leftIntersection.y, 2, 0, Math.PI * 2);
-        rightIntersection && ctx.arc(rightIntersection.x, rightIntersection.y, 2, 0, Math.PI * 2);
-        upIntersection && ctx.arc(upIntersection.x, upIntersection.y, 2, 0, Math.PI * 2);
-        downIntersection && ctx.arc(downIntersection.x, downIntersection.y, 2, 0, Math.PI * 2);
-        ctx.fill();
+
+        function setIntersectionMark (intersection) {
+            if (intersection) {
+                ctx.beginPath();
+                ctx.arc(intersection.x, intersection.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        setIntersectionMark(leftIntersection);
+        setIntersectionMark(rightIntersection);
+        setIntersectionMark(upIntersection);
+        setIntersectionMark(downIntersection);
     }
 
     function getLinesIntersection (ps1, pe1, ps2, pe2) {
