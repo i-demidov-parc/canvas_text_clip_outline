@@ -72,15 +72,15 @@ window.onload = function () {
 
         var outlineRects = getOutlineRects(xc, yc);
         var restrictedRects = getRestrictedRects();
-        var rectsOffset = setOutlineRectsOffset(outlineRects, restrictedRects);
+        // var rectsOffset = setOutlineRectsOffset(outlineRects, restrictedRects);
 
-        xc += rectsOffset.x;
-        yc += rectsOffset.y;
+        // xc += rectsOffset.x;
+        // yc += rectsOffset.y;
 
-        var newCenter = setCenterOffset({ xc, yc, x1, y1, x2, y2 }, outlineRects);
+        // var newCenter = setCenterOffset({ xc, yc, x1, y1, x2, y2 }, outlineRects);
 
-        xc = newCenter.x;
-        yc = newCenter.y;
+        // xc = newCenter.x;
+        // yc = newCenter.y;
 
         drawBackgound();
 
@@ -95,6 +95,8 @@ window.onload = function () {
         drawTextPoint(xc, yc);
 
         drawText(xc, yc);
+
+        drawOffsetProjections({ xc, yc, x1, y1, x2, y2 }, outlineRects, restrictedRects);
     }
 
     function reset () {
@@ -145,6 +147,10 @@ window.onload = function () {
             }
         }
 
+        return [getOneOutlineRect(rects)];
+    }
+
+    function getOneOutlineRect (rects) {
         var oneRect = {
             y: rects[0].y,
             h: rects[rects.length - 1].y - rects[0].y + rects[rects.length - 1].h
@@ -157,7 +163,7 @@ window.onload = function () {
             }
         }
 
-        return [oneRect];
+        return oneRect;
     }
 
     function getRestrictedRects () {
@@ -169,9 +175,9 @@ window.onload = function () {
             c: 'deepskyblue'
         }, {
             x: 575,
-            y: 200,
+            y: 100,
             w: 80,
-            h: 80,
+            h: 300,
             c: 'lightgreen'
         }/* , {
             x: 250,
@@ -260,22 +266,12 @@ window.onload = function () {
         var rRect;
         var iRect;
         var isPositiveOffset;
-        var oRect = {
-            y: outlineRects[0].y,
-            h: outlineRects[outlineRects.length - 1].y - outlineRects[0].y + outlineRects[outlineRects.length - 1].h
-        };
+        var oRect = getOneOutlineRect(outlineRects);
         var result = {
             x: 0,
             y: 0
         };
         var isHorizontal, axisKey, sideKey;
-
-        for (var i = 0, imax = outlineRects.length; i < imax; i++) {
-            if (oRect.x === undefined || outlineRects[i].x < oRect.x) {
-                oRect.x = outlineRects[i].x;
-                oRect.w = outlineRects[i].w;
-            }
-        }
 
         for (var j = 0, jmax = restrictedRects.length; j < jmax; j++) {
             rRect = restrictedRects[j];
@@ -283,7 +279,7 @@ window.onload = function () {
             iRect = getRectsIntersectionArea(rRect, oRect);
 
             if (iRect) {
-                isHorizontal = true; iRect.w < iRect.h;
+                isHorizontal = iRect.w < iRect.h;
 
                 if (isHorizontal) {
                     axisKey = 'x';
@@ -318,6 +314,22 @@ window.onload = function () {
         }
 
         return result;
+    }
+
+    function drawOffsetProjections (points, outlineRects, restrictedRects) {
+        var rRect;
+        var iRect;
+        var oRect = getOneOutlineRect(outlineRects);
+
+        for (var j = 0, jmax = restrictedRects.length; j < jmax; j++) {
+            rRect = restrictedRects[j];
+
+            iRect = getRectsIntersectionArea(rRect, oRect);
+
+            if (iRect) {
+                // console.log('setOutlineRectsOffset2', iRect);
+            }
+        }
     }
 
     function setCenterOffset (points, outlineRects) {
