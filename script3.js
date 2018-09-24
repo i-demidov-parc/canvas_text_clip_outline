@@ -72,17 +72,19 @@ window.onload = function () {
 
         var outlineRects = getOutlineRects(xc, yc);
         var restrictedRects = getRestrictedRects();
-        // var rectsOffset = setOutlineRectsOffset(outlineRects, restrictedRects);
-
-        // xc += rectsOffset.x;
-        // yc += rectsOffset.y;
-
-        // var newCenter = setCenterOffset({ xc, yc, x1, y1, x2, y2 }, outlineRects);
-
-        // xc = newCenter.x;
-        // yc = newCenter.y;
 
         drawBackgound();
+
+        // drawOffsetProjections({ xc, yc, x1, y1, x2, y2 }, outlineRects, restrictedRects);
+
+        var offset = getOutlineRectsOffset({ xc, yc, x1, y1, x2, y2 }, outlineRects, restrictedRects);
+
+        if (offset) {
+            setOutlineRectsOffset(outlineRects, offset);
+
+            xc += offset.x;
+            yc += offset.y;
+        }
 
         drawRestrictedAreas(restrictedRects, outlineRects);
 
@@ -95,8 +97,6 @@ window.onload = function () {
         drawTextPoint(xc, yc);
 
         drawText(xc, yc);
-
-        drawOffsetProjections({ xc, yc, x1, y1, x2, y2 }, outlineRects, restrictedRects);
     }
 
     function reset () {
@@ -179,7 +179,7 @@ window.onload = function () {
             w: 80,
             h: 300,
             c: 'lightgreen'
-        }/* , {
+        }, {
             x: 250,
             y: 80,
             w: 150,
@@ -262,16 +262,17 @@ window.onload = function () {
         return null;
     }
 
-    function setOutlineRectsOffset (outlineRects, restrictedRects) {
+    function setOutlineRectsOffset (outlineRects, offset) {
+        for (var i = 0, imax = outlineRects.length; i < imax; i++) {
+            outlineRects[i].x += offset.x;
+            outlineRects[i].y += offset.y;
+        }
+    }
+
+    function getOutlineRectsOffset (points, outlineRects, restrictedRects) {
+        var oRect = getOneOutlineRect(outlineRects);
         var rRect;
         var iRect;
-        var isPositiveOffset;
-        var oRect = getOneOutlineRect(outlineRects);
-        var result = {
-            x: 0,
-            y: 0
-        };
-        var isHorizontal, axisKey, sideKey;
 
         for (var j = 0, jmax = restrictedRects.length; j < jmax; j++) {
             rRect = restrictedRects[j];
@@ -279,41 +280,72 @@ window.onload = function () {
             iRect = getRectsIntersectionArea(rRect, oRect);
 
             if (iRect) {
-                isHorizontal = iRect.w < iRect.h;
+                var isPoitiveY = points.y1 <= points.y2;
+                var isPoitiveX = points.x1 <= points.x2;
+                var intersection;
+                var newCenterX, newCenterY;
+                var resultX1, resultY1, resultSum1;
+                var resultX2, resultY2, resultSum2;
+                var offsetX = isPoitiveX ?
+                        iRect.w + Math.max(rRect.x + rRect.w - oRect.x - oRect.w, 0) :
+                        -iRect.w - Math.max(oRect.x - rRect.x, 0);
+                var offsetY = isPoitiveY ?
+                        iRect.h + Math.max(rRect.y + rRect.h - oRect.y - oRect.h, 0):
+                        -iRect.h - Math.max(oRect.y - rRect.y, 0);
 
-                if (isHorizontal) {
-                    axisKey = 'x';
-                    sideKey = 'w';
-                } else {
-                    axisKey = 'y';
-                    sideKey = 'h';
-                }
+                intersection = getLinesIntersection({
+                    x: points.x1,
+                    y: points.y1,
+                }, {
+                    x: points.x2,
+                    y: points.y2,
+                }, {
+                    x: points.xc,
+                    y: points.yc + offsetY,
+                }, {
+                    x: canvas.width,
+                    y: points.yc + offsetY,
+                });
 
-                isPositiveOffset = (oRect[axisKey] + oRect[sideKey] / 2) > (rRect[axisKey] + rRect[sideKey] / 2);
+                newCenterX = intersection ? intersection.x : points.xc + offsetX;
+                newCenterY = intersection ? intersection.y : points.yc;
 
-                if (isPositiveOffset) {
-                    result[axisKey] = iRect[sideKey] + rRect[axisKey] + rRect[sideKey] - iRect[axisKey] - iRect[sideKey];
+                resultX1 = newCenterX - points.xc;
+                resultY1 = newCenterY - points.yc;
+                resultSum1 = Math.abs(resultX1) + Math.abs(resultY1);
 
-                    if ((rRect[axisKey] - oRect[axisKey]) > 0) {
-                        result[axisKey] += rRect[axisKey] - oRect[axisKey];
-                    }
-                } else {
-                    result[axisKey] = -iRect[sideKey] + rRect[axisKey] - iRect[axisKey];
+                intersection = getLinesIntersection({
+                    x: points.x1,
+                    y: points.y1,
+                }, {
+                    x: points.x2,
+                    y: points.y2,
+                }, {
+                    x: points.xc + offsetX,
+                    y: points.yc,
+                }, {
+                    x: points.xc + offsetX,
+                    y: canvas.height,
+                });
 
-                    if ((oRect[axisKey] + oRect[sideKey] - rRect[axisKey] - rRect[sideKey]) > 0) {
-                        result[axisKey] -= oRect[axisKey] + oRect[sideKey] - rRect[axisKey] - rRect[sideKey];
-                    }
-                }
+                newCenterX = intersection ? intersection.x : points.xc + offsetX;
+                newCenterY = intersection ? intersection.y : points.yc + iRect.h;
 
-                for (var k = 0, kmax = outlineRects.length; k < kmax; k++) {
-                    outlineRects[k][axisKey] += result[axisKey];
-                }
+                resultX2 = newCenterX - points.xc;
+                resultY2 = newCenterY - points.yc;
+                resultSum2 = Math.abs(resultX2) + Math.abs(resultY2);
 
-                return result;
+                return resultSum1 < resultSum2 ? {
+                    x: resultX1,
+                    y: resultY1
+                } : {
+                    x: resultX2,
+                    y: resultY2
+                };
             }
         }
 
-        return result;
+        return null;
     }
 
     function drawOffsetProjections (points, outlineRects, restrictedRects) {
@@ -426,42 +458,6 @@ window.onload = function () {
                 ctx.fill();
             }
         }
-    }
-
-    function setCenterOffset (points, outlineRects) {
-        var intersection = getLinesIntersection({
-            x: points.xc,
-            y: 0
-        }, {
-            x: points.xc,
-            y: canvas.height
-        }, {
-            x: points.x1,
-            y: points.y1
-        }, {
-            x: points.x2,
-            y: points.y2
-        });
-
-        if (intersection) {
-            var offset = {
-                x: intersection.x - points.xc,
-                y: intersection.y - points.yc,
-            };
-
-            for (var i = 0, imax = outlineRects.length; i < imax; i++) {
-                outlineRects[i].x += offset.x;
-                outlineRects[i].y += offset.y;
-            }
-
-            ctx.fillStyle = 'red';
-
-            ctx.beginPath();
-            ctx.arc(intersection.x, intersection.y, 2, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        return intersection;
     }
 
     function drawText (cx, cy) {
