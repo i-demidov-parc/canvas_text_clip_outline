@@ -63,7 +63,7 @@ window.onload = function () {
     };
 
     function draw (px, py) {
-        var x1 = 0;
+        var x1 = canvas.width / 2;
         var y1 = canvas.height / 2;
         var x2 = px === undefined ? canvas.width : px;
         var y2 = py === undefined ? canvas.height / 2 : py;
@@ -168,12 +168,12 @@ window.onload = function () {
 
     function getRestrictedRects () {
         return [{
-            x: 100,
-            y: 200,
-            w: 200,
-            h: 80,
+            x: 250,
+            y: 150,
+            w: 300,
+            h: 200,
             c: 'deepskyblue'
-        }, {
+        }/* , {
             x: 575,
             y: 100,
             w: 80,
@@ -327,7 +327,103 @@ window.onload = function () {
             iRect = getRectsIntersectionArea(rRect, oRect);
 
             if (iRect) {
-                // console.log('setOutlineRectsOffset2', iRect);
+                var isPoitiveY = points.y1 <= points.y2;
+                var isPoitiveX = points.x1 <= points.x2;
+                var intersection;
+                var pxc, pyc;
+                var oxc, oyc;
+                var xOffset = isPoitiveX ?
+                              iRect.w + Math.max(rRect.x + rRect.w - oRect.x - oRect.w, 0) :
+                              -iRect.w - Math.max(oRect.x - rRect.x, 0);
+                var yOffset = isPoitiveY ?
+                              iRect.h + Math.max(rRect.y + rRect.h - oRect.y - oRect.h, 0):
+                              -iRect.h - Math.max(oRect.y - rRect.y, 0);
+
+                ctx.fillStyle = '#fff';
+
+                ctx.beginPath();
+                ctx.strokeStyle = 'green';
+
+                ctx.moveTo(points.xc, points.yc);
+                ctx.lineTo(points.xc, points.yc + yOffset);
+
+                intersection = getLinesIntersection({
+                    x: points.x1,
+                    y: points.y1,
+                }, {
+                    x: points.x2,
+                    y: points.y2,
+                }, {
+                    x: points.xc,
+                    y: points.yc + yOffset,
+                }, {
+                    x: canvas.width,
+                    y: points.yc + yOffset,
+                });
+
+                if (intersection) {
+                    pxc = intersection.x;
+                    pyc = intersection.y;
+                } else {
+                    pxc = points.xc + xOffset;
+                    pyc = points.yc;
+                }
+
+                oxc = pxc - points.xc;
+                oyc = pyc - points.yc;
+
+                ctx.lineTo(pxc, pyc);
+                ctx.arc(pxc, pyc, 3, 0, Math.PI * 2);
+                ctx.rect(oRect.x + oxc, oRect.y + oyc, oRect.w, oRect.h);
+
+                ctx.stroke();
+
+                ctx.beginPath();
+
+                ctx.arc(pxc, pyc, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.strokeStyle = 'purple';
+
+                ctx.moveTo(points.xc, points.yc);
+                ctx.lineTo(points.xc + xOffset, points.yc);
+
+                intersection = getLinesIntersection({
+                    x: points.x1,
+                    y: points.y1,
+                }, {
+                    x: points.x2,
+                    y: points.y2,
+                }, {
+                    x: points.xc + xOffset,
+                    y: points.yc,
+                }, {
+                    x: points.xc + xOffset,
+                    y: canvas.height,
+                });
+
+                if (intersection) {
+                    pxc = intersection.x;
+                    pyc = intersection.y;
+                } else {
+                    pxc = points.xc + xOffset;
+                    pyc = points.yc + iRect.h;
+                }
+
+                oxc = pxc - points.xc;
+                oyc = pyc - points.yc;
+
+                ctx.lineTo(pxc, pyc);
+                ctx.arc(pxc, pyc, 3, 0, Math.PI * 2);
+                ctx.rect(oRect.x + oxc, oRect.y + oyc, oRect.w, oRect.h);
+
+                ctx.stroke();
+
+                ctx.beginPath();
+
+                ctx.arc(pxc, pyc, 2, 0, Math.PI * 2);
+                ctx.fill();
             }
         }
     }
@@ -381,12 +477,21 @@ window.onload = function () {
         }
     }
 
-    function drawLine (points, outlineRects) {
+    function drawLine (points) {
         ctx.beginPath();
         ctx.moveTo(points.x1, points.y1);
         ctx.strokeStyle = '#000';
         ctx.lineTo(points.x2, points.y2);
         ctx.stroke();
+
+        ctx.beginPath();
+        ctx.fillStyle = '#000';
+        ctx.arc(points.x1, points.y1, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(points.x2, points.y2, 3, 0, Math.PI * 2);
+        ctx.fill();
     }
 
     function drawOutline (outlineRects, restrictedRects) {
